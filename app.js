@@ -55,6 +55,13 @@ function updateTable(tableId, data, header) {
     cell.innerHTML = data[i];
   }
 }
+function openJobModal() {
+  document.getElementById("jobModal").style.display = "flex";
+}
+
+function closeJobModal() {
+  document.getElementById("jobModal").style.display = "none";
+}
 
 function addNewJob() {
   const jobName = document.getElementById("jobName").value;
@@ -67,9 +74,27 @@ function addNewJob() {
   profits.push(jobProfit);
 
   updateTables();
+  
+  closeJobModal();
+}
+
+function addNewSlot() {
+  slots.push("-");
+
+  updateTable("tableSlots", slots, "Data");
+  
 }
 
 
+function updateTables() {
+  updateTable("tableJobs", jobs, "Job Name");
+
+  updateTable("tableDeadlines", deadlines, "Deadline");
+
+  updateTable("tableProfits", profits, "Profit");
+
+  updateTable("tableSlots", slots, "Data");
+}
 function sortJobs() {
 
   const sortedSchedule = greedyJobScheduling(jobs, deadlines, profits);
@@ -119,5 +144,117 @@ function greedyJobScheduling(jobNames, deadlines, profits) {
   return result;
 }
 
+function performStep(sortedSchedule) {
+  if (stepIndex < sortedSchedule.length) {
+    const currentJob = sortedSchedule[stepIndex];
 
+    highlightColumn("tableJobs", currentJob);
+    highlightColumn("tableDeadlines", currentJob);
+    highlightColumn("tableProfits", currentJob);
+
+    updateSlotsTable(sortedSchedule.slice(0, stepIndex + 1));
+
+    setTimeout(() => {
+      removeColumnHighlight("tableJobs", currentJob);
+      removeColumnHighlight("tableDeadlines", currentJob);
+      removeColumnHighlight("tableProfits", currentJob);
+
+      stepIndex++;
+      performStep(sortedSchedule);
+    }, 2000);
+  }
+}
+
+let stepIndex = 0; 
+
+function playAlgorithm() {
+  const sortedSchedule = greedyJobScheduling(jobs, deadlines, profits);
+
+  stepIndex = 0;
+
+  performStep(sortedSchedule);
+}
+
+function stepForward() {
+  const sortedSchedule = greedyJobScheduling(jobs, deadlines, profits);
+
+  if (stepIndex < sortedSchedule.length) {
+    const currentJob = sortedSchedule[stepIndex];
+    highlightColumn("tableJobs", currentJob);
+    highlightColumn("tableDeadlines", currentJob);
+    highlightColumn("tableProfits", currentJob);
+
+    stepIndex++;
+  
+    updateSlotsTable(sortedSchedule.slice(0, stepIndex));
+  }
+}
+function stepBackward() {
+  if (stepIndex > 0) {
+    stepIndex--;
+    const sortedSchedule = greedyJobScheduling(jobs, deadlines, profits);
+    const currentJob = sortedSchedule[stepIndex];
+
+    removeColumnHighlight("tableJobs", currentJob);
+    removeColumnHighlight("tableDeadlines", currentJob);
+    removeColumnHighlight("tableProfits", currentJob);
+
+    updateSlotsTable(sortedSchedule.slice(0, stepIndex));
+  }
+}
+function updateSlotsTable(schedule) {
+  const table = document.getElementById("tableSlots");
+
+  const existingRow = table.querySelector("tr:nth-child(2)");
+
+  if (existingRow) {
+    for (let i = 0; i < existingRow.cells.length - 1; i++) {
+      const cell = existingRow.cells[i + 1];
+      cell.innerHTML = '-';
+    }
+
+    for (let i = 0; i < schedule.length; i++) {
+      const cell = existingRow.cells[i + 1];
+      if (cell.innerHTML === '-') {
+        cell.innerHTML = schedule[i] !== '-' ? schedule[i] : '-';
+      }
+    }
+  } else {
+    const row = table.insertRow(2);
+
+    const headerCell = row.insertCell(0);
+    headerCell.innerHTML = `<b>Data</b>`;
+
+    for (let i = 0; i < schedule.length; i++) {
+      const cell = row.insertCell(i + 1);
+      cell.innerHTML = schedule[i] !== '-' ? schedule[i] : '-';
+    }
+  }
+}
+
+function highlightColumn(tableId, value) {
+  const table = document.getElementById(tableId);
+
+  for (let i = 1; i < table.rows.length; i++) {
+    const cell = table.rows[i].cells;
+    for (let j = 1; j < cell.length; j++) {
+      if (cell[j].innerHTML === value) {
+        cell[j].style.backgroundColor = "yellow";
+      }
+    }
+  }
+}
+
+function removeColumnHighlight(tableId, value) {
+  const table = document.getElementById(tableId);
+
+  for (let i = 1; i < table.rows.length; i++) {
+    const cell = table.rows[i].cells;
+    for (let j = 1; j < cell.length; j++) {
+      if (cell[j].innerHTML === value) {
+        cell[j].style.backgroundColor = "";
+      }
+    }
+  }
+}
 
